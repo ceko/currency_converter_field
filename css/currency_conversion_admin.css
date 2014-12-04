@@ -1,0 +1,21 @@
+.currency-converter-field-amount {
+	max-width:150px;
+}
+
+.currency-converter-table-toggle {
+	width: 30px;
+	height: 30px;
+	background: url('../images/exchange.png') center center no-repeat;
+	background-size: cover;
+	display: inline-block;
+	position: absolute;
+	left: 160px;
+	margin-top: -5px;
+	cursor:pointer;
+}
+
+.conversion-table {
+	margin-top: 10px;
+	max-width: 300px;
+	display:none;
+}

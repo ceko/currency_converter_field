@@ -1,0 +1,151 @@
+<?php
+
+require_once 'lib/CurrencyConverter.php';
+
+/**
+ * Implements hook_help().
+ *
+ * Displays help and module information.
+ *
+ * @param path
+ *   Which path of the site we're using to display help
+ * @param arg
+ *   Array that holds the current path as returned from arg() function
+ */
+
+function currency_converter_field_help($path, $arg) {
+	switch ($path) {
+		case "admin/help#currency_converter_field":
+			return '<p>' . t("Stores a price in USD and automatically converts it to the user's currency when they view the page.") . '</p>';
+			break;
+	}
+}
+
+function currency_converter_field_field_info() {	
+	return array(
+		'currency_converter_field_amount' => array(
+			'label' => t('Converted Currency'),
+			'description' => t("Enter all amounts in USD, the conversion will happen automatically."),
+			'settings' => array('allowed_values' => array(), 'allowed_values_function' => ''),
+			'default_widget' => 'currency_converter_field_amount',
+			'default_formatter' => 'currency_converter_field_amount', 
+		)
+	);
+}
+
+function currency_converter_field_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
+	foreach($items as $name => $item) {
+		$value = $item['amount'];	
+		if($value) {
+			if(!is_numeric($value)) {
+				$errors[$field['field_name']][$langcode][$name][] = array(
+					'error' => 'amount',
+					'message' => t($instance['label'] . ' must be a number.'),
+				);
+			}
+		}
+	}	
+}
+
+function currency_converter_field_field_is_empty($item, $field) {
+	return empty($item['amount']);
+}
+
+function currency_converter_field_field_widget_error($element, $error, $form, &$form_state) {		
+	form_error($element, $error['message']);	
+}
+
+function currency_converter_field_field_widget_info() {
+	return array(
+		'currency_converter_field_amount' => array(
+			'label' => t('Amount in USD'),
+			'field types' => array('currency_converter_field_amount')
+		)
+	);
+}
+
+function currency_converter_field_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+	//This definitely has a better hook I could put it in.
+	drupal_add_js(array('currency_converter_field' => array('basepath' => '/' . drupal_get_path('module', 'currency_converter_field'))), 'setting');
+		
+	switch ($instance['widget']['type']) {		
+		case 'currency_converter_field_amount':			
+			$element['amount'] = array(
+				'#title' => 'Amount',
+				'#delta' => $delta,
+				'#type' => 'textfield',				
+				'#attributes' => array('class' => array('currency-converter-field-amount')),
+				'#default_value' => isset($items[$delta]['amount']) ? $items[$delta]['amount'] : '',
+				'#attached' => array(
+					'js' => array(
+						drupal_get_path('module', 'currency_converter_field') . '/js/currency_conversion_admin.js'
+					),
+					'css' => array(
+						drupal_get_path('module', 'currency_converter_field') . '/css/currency_conversion_admin.css'
+					)
+				)								
+			);
+						
+			$element['currency'] = array(
+				'#title' => 'Display Currency',				
+				'#delta' => $delta,
+				'#default_value' => isset($items[$delta]['currency']) ? $items[$delta]['currency'] : '',
+				'#type' => 'select',
+				'#options' => array(
+					'USD' => 'USD', 
+					'EUR' => 'EUR', 
+					'JPY' => 'JPY'
+				)
+			);						
+			break;
+	}
+	
+	return $element;			
+}
+
+function currency_converter_field_field_formatter_info() {
+	return array(
+		'currency_converter_field_amount' => array(
+			'label' => t('Formats the amount in the appropriate currency'),
+			'field types' => array('currency_converter_field_amount')
+		)
+	);
+}
+
+function currency_converter_field_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+	$element = array();
+	
+	switch ($display['type']) { 
+		case 'currency_converter_field_amount':			
+			foreach ($items as $delta => $item) {
+				$amount = $item['amount'];
+				$currency = $item['currency'];
+				
+				$element[$delta] = array(					
+					'#type' => 'html_tag',
+					'#tag' => 'span',
+					'#attributes' => array(
+						'class' => 'converted-currency',
+					),
+					'#prefix' => \cekolabs\CurrencyConverter::getCurrencySymbol($currency),
+					'#value' => \cekolabs\CurrencyConverter::convert($amount, $currency),
+				);
+			}
+			break;
+	}
+	
+	return $element;
+}
+
+function currency_converter_field_menu() {
+	$items['examples/currency_converter_field'] = array(
+		'title' => 'Currency Converter Field',
+		'page callback' => '_currency_converter_field_page',
+		'access callback' => TRUE,
+	);
+	return $items;
+}
+
+function _currency_converter_field_page() {
+	return t("The currency conversion field adds an easy way to show currency in multiple locales. To use it, add the field to a content type.");
+}

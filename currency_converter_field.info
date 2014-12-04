@@ -1,0 +1,4 @@
+name = currency converter field
+description = Automatically converts currency from USD to the user's selected locale
+core = 7.x
+version = .1

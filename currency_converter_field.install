@@ -1,0 +1,22 @@
+<?php
+
+function currency_converter_field_field_schema($field) {
+	$columns = array(
+		'amount' => array(
+			'type' => 'numeric',
+			'precision' => '10',
+			'scale' => '2',
+			'notnull' => true
+		),
+		'currency' => array(
+			'type' => 'varchar',
+			'length' => 3,
+			'not null' => true
+		)	
+	);
+			
+	return array(
+		'columns' => $columns,		
+	);
+}
+
